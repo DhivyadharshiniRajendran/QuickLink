@@ -1,0 +1,41 @@
+.analytics-overview-page {
+  background: linear-gradient(180deg, #f5f7ff 0%, #ffffff 100%);
+  min-height: 100vh;
+  padding: 2rem 1.5rem;
+}
+
+.overview-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.overview-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.overview-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 0.5rem;
+}
+
+.overview-subtitle {
+  font-size: 1.125rem;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .analytics-overview-page {
+    padding: 1rem;
+  }
+
+  .overview-title {
+    font-size: 1.5rem;
+  }
+
+  .overview-subtitle {
+    font-size: 1rem;
+  }
+}

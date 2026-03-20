@@ -1,0 +1,191 @@
+.short-url-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.short-url-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.url-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.url-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.url-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.original-url {
+  color: #667eea;
+  text-decoration: none;
+  word-break: break-all;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  transition: all 0.3s ease;
+}
+
+.original-url:hover {
+  background-color: #f5f7ff;
+  text-decoration: underline;
+}
+
+.short-url-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.short-url {
+  background-color: #f5f5f5;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  color: #333;
+  flex: 1;
+  min-width: 100px;
+}
+
+.copy-btn {
+  padding: 0.5rem 1rem;
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.copy-btn:hover {
+  background-color: #e8e8e8;
+  border-color: #d0d0d0;
+}
+
+.copy-btn.copied {
+  background-color: #d4edda;
+  color: #155724;
+  border-color: #c3e6cb;
+}
+
+.stat-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.click-count {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.view-analytics-btn,
+.delete-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+}
+
+.view-analytics-btn {
+  background-color: #667eea;
+  color: white;
+}
+
+.view-analytics-btn:hover {
+  background-color: #5568d3;
+  transform: translateY(-2px);
+}
+
+.delete-btn {
+  background-color: #f0f0f0;
+  color: #d32f2f;
+  border: 1px solid #e0e0e0;
+}
+
+.delete-btn:hover {
+  background-color: #ffebee;
+  border-color: #d32f2f;
+}
+
+@media (max-width: 768px) {
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .url-row {
+    flex-direction: column;
+  }
+
+  .short-url-wrapper {
+    flex-direction: column;
+  }
+
+  .short-url {
+    width: 100%;
+  }
+
+  .copy-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .action-buttons {
+    width: 100%;
+  }
+
+  .view-analytics-btn,
+  .delete-btn {
+    flex: 1;
+    text-align: center;
+  }
+}

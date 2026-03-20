@@ -1,0 +1,44 @@
+.short-urls-section {
+  margin-top: 2rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 1.5rem;
+  padding-left: 0.5rem;
+  border-left: 4px solid #667eea;
+}
+
+.table-header {
+  background-color: #f9f9f9;
+  border-bottom: 2px solid #e0e0e0;
+  padding: 1rem;
+  border-radius: 0.75rem 0.75rem 0 0;
+  display: none;
+}
+
+.header-row {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 0.75fr 1.5fr;
+  gap: 1rem;
+  font-weight: 700;
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.col-original,
+.col-short,
+.col-created,
+.col-clicks,
+.col-actions {
+  display: flex;
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .table-header {
+    display: block;
+  }
+}
