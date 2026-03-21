@@ -3,6 +3,9 @@ import { useAuth } from './AuthContext';
 
 export const UrlContext = createContext();
 
+// Log API URL configuration for debugging
+console.log('🌐 [UrlContext] API URL:', import.meta.env.VITE_API_URL || 'http://localhost:3001/api');
+
 export const UrlProvider = ({ children }) => {
   const [urls, setUrls] = useState([]);
   const [notification, setNotification] = useState(null);

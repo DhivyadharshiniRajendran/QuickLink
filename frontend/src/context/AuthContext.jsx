@@ -2,6 +2,9 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
+// Log API URL configuration for debugging
+console.log('🌐 [AuthContext] API URL:', import.meta.env.VITE_API_URL || 'http://localhost:3001/api');
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
