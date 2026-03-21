@@ -358,3 +358,254 @@
     display: none;
   }
 }
+
+/* New Analytics Styles */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  font-size: 1.125rem;
+  color: #666;
+}
+
+.section-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 1.5rem;
+}
+
+/* Chart Section */
+.chart-section {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.simple-chart {
+  margin-top: 1.5rem;
+}
+
+.chart-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 250px;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 0.5rem;
+}
+
+.chart-bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.chart-bar {
+  width: 100%;
+  height: 100%;
+  background-color: #f0f3ff;
+  border-radius: 0.5rem;
+  position: relative;
+  min-height: 20px;
+}
+
+.bar {
+  width: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+  min-height: 20px;
+}
+
+.chart-bar:hover .bar {
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.chart-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666;
+  text-align: center;
+}
+
+.chart-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #667eea;
+}
+
+/* Breakdown Section */
+.breakdown-section {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.breakdown-card {
+  background: linear-gradient(135deg, #f5f7ff 0%, #f0f3ff 100%);
+  border: 1px solid #e8ebf0;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+}
+
+.breakdown-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.breakdown-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #667eea;
+}
+
+/* Browser List */
+.browser-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.browser-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 0.5rem;
+  border: 1px solid #e0e0e0;
+}
+
+.browser-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.browser-count {
+  background-color: #667eea;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 2rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+/* Updated History Table */
+.history-header {
+  display: grid;
+  grid-template-columns: 1fr 100px 100px 100px 120px;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-bottom: 2px solid #e0e0e0;
+  font-weight: 700;
+  color: #666;
+  font-size: 0.875rem;
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.col-timestamp,
+.col-browser,
+.col-device,
+.col-os,
+.col-ip {
+  display: flex;
+  align-items: center;
+}
+
+.history-item {
+  display: grid;
+  grid-template-columns: 1fr 100px 100px 100px 120px;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  align-items: center;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.history-item:hover {
+  background-color: #f9f9f9;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.col-ip {
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+@media (max-width: 1200px) {
+  .history-header {
+    grid-template-columns: 1fr 80px 80px 80px 100px;
+  }
+
+  .history-item {
+    grid-template-columns: 1fr 80px 80px 80px 100px;
+  }
+}
+
+@media (max-width: 768px) {
+  .history-header {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .history-item {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .col-timestamp,
+  .col-browser,
+  .col-device,
+  .col-os,
+  .col-ip {
+    display: inline;
+  }
+
+  .history-item::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: #666;
+  }
+
+  .breakdown-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .chart-container {
+    height: 200px;
+  }
+}

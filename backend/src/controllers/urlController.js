@@ -1,6 +1,66 @@
 import pool from '../config/database.js';
 import { generateShortCode, isValidUrl } from '../utils/helpers.js';
 
+// Helper function to extract browser info from User-Agent
+const parseBrowserInfo = (userAgent) => {
+  if (!userAgent) {
+    return { browser: 'Unknown', deviceType: 'Unknown', os: 'Unknown' };
+  }
+
+  let browser = 'Unknown';
+  let os = 'Unknown';
+  let deviceType = 'Desktop';
+
+  // Detect browser
+  if (userAgent.includes('Chrome') && !userAgent.includes('Edge') && !userAgent.includes('Chromium')) {
+    browser = 'Chrome';
+  } else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
+    browser = 'Safari';
+  } else if (userAgent.includes('Firefox')) {
+    browser = 'Firefox';
+  } else if (userAgent.includes('Edge')) {
+    browser = 'Edge';
+  } else if (userAgent.includes('Opera') || userAgent.includes('OPR')) {
+    browser = 'Opera';
+  }
+
+  // Detect OS
+  if (userAgent.includes('Windows')) {
+    os = 'Windows';
+  } else if (userAgent.includes('Mac')) {
+    os = 'MacOS';
+  } else if (userAgent.includes('Linux')) {
+    os = 'Linux';
+  } else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) {
+    os = 'iOS';
+  } else if (userAgent.includes('Android')) {
+    os = 'Android';
+  }
+
+  // Detect device type
+  if (userAgent.includes('Mobile') || userAgent.includes('Android') || userAgent.includes('iPhone')) {
+    deviceType = 'Mobile';
+  } else if (userAgent.includes('Tablet') || userAgent.includes('iPad')) {
+    deviceType = 'Tablet';
+  }
+
+  return { browser, os, deviceType };
+};
+
+// Helper function to extract IP address from request
+const getIpAddress = (req) => {
+  return (
+    req.headers['x-forwarded-for']?.split(',')[0].trim() ||
+    req.headers['x-original-forwarded-for'] ||
+    req.headers['CF-Connecting-IP'] ||
+    req.headers['Fastly-Client-IP'] ||
+    req.headers['True-Client-IP'] ||
+    req.connection?.remoteAddress ||
+    req.socket?.remoteAddress ||
+    'Unknown'
+  );
+};
+
 export const createShortUrl = async (req, res) => {
   try {
     const { originalUrl } = req.body;
@@ -194,19 +254,28 @@ export const redirectToUrl = async (req, res) => {
 
     console.log(`✓ Original URL: ${originalUrl}`);
 
-    // Record visit in the visits table
+    // Extract analytics data
+    const userAgent = req.get('user-agent') || '';
+    const { browser, os, deviceType } = parseBrowserInfo(userAgent);
+    const ipAddress = getIpAddress(req);
+
+    console.log(`📊 Analytics - Browser: ${browser}, Device: ${deviceType}, OS: ${os}, IP: ${ipAddress}`);
+
+    // Record visit in the visits table with detailed analytics
     await pool.query(
-      'INSERT INTO visits (short_url_id, visited_at) VALUES ($1, NOW())',
+      `INSERT INTO visits (short_url_id, visited_at, browser, device_type, os, ip_address) 
+       VALUES ($1, NOW(), $2, $3, $4, $5)`,
+      [shortUrlId, browser, deviceType, os, ipAddress]
+    );
+
+    // Increment click count and update last_visited_at in the short_urls table
+    await pool.query(
+      `UPDATE short_urls SET click_count = click_count + 1, last_visited_at = NOW() 
+       WHERE id = $1`,
       [shortUrlId]
     );
 
-    // Increment click count in the short_urls table
-    await pool.query(
-      'UPDATE short_urls SET click_count = click_count + 1 WHERE id = $1',
-      [shortUrlId]
-    );
-
-    console.log(`✓ Click tracked: ${shortCode} (ID: ${shortUrlId}) | Visit recorded and click count incremented`);
+    console.log(`✓ Click tracked: ${shortCode} (ID: ${shortUrlId}) | Visit recorded with analytics and click count incremented`);
 
     // Use 301 permanent redirect for better mobile compatibility
     // 301 = Moved Permanently (better for SEO and mobile browsers)
@@ -231,7 +300,7 @@ export const getUrlDetails = async (req, res) => {
     }
 
     const urlResult = await pool.query(
-      'SELECT id, user_id, original_url, short_code, created_at FROM short_urls WHERE id = $1',
+      'SELECT id, user_id, original_url, short_code, created_at, click_count FROM short_urls WHERE id = $1',
       [id]
     );
 
@@ -245,44 +314,176 @@ export const getUrlDetails = async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
-    // Get analytics
-    const analyticsResult = await pool.query(
-      `
-      SELECT 
-        COUNT(*) as total_clicks,
-        MAX(visited_at) as last_visited
-      FROM visits
-      WHERE short_url_id = $1
-      `,
-      [id]
-    );
-
-    const analytics = analyticsResult.rows[0];
-
-    // Get recent visits (last 10)
-    const visitsResult = await pool.query(
-      `
-      SELECT visited_at
-      FROM visits
-      WHERE short_url_id = $1
-      ORDER BY visited_at DESC
-      LIMIT 10
-      `,
-      [id]
-    );
-
     res.json({
       id,
       originalUrl: url.original_url,
       shortCode: url.short_code,
       shortUrl: `${process.env.BASE_URL || 'http://localhost:3001'}/${url.short_code}`,
       createdAt: url.created_at,
-      totalClicks: parseInt(analytics.total_clicks) || 0,
-      lastVisited: analytics.last_visited,
-      recentVisits: visitsResult.rows.map((v) => ({ visitedAt: v.visited_at })),
+      clicks: parseInt(url.click_count) || 0,
     });
   } catch (error) {
     console.error('Get URL details error:', error);
     res.status(500).json({ error: 'An error occurred while fetching URL details' });
+  }
+};
+
+export const getAnalytics = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Support both req.user and req.userId
+    const userId = req.user?.id || req.userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized - No user found' });
+    }
+
+    // Verify ownership
+    const urlCheck = await pool.query(
+      'SELECT user_id, short_code, click_count, last_visited_at FROM short_urls WHERE id = $1',
+      [id]
+    );
+
+    if (urlCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'URL not found' });
+    }
+
+    if (urlCheck.rows[0].user_id !== userId) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    const shortUrl = urlCheck.rows[0];
+
+    // Get total click count and last visited time
+    const totalClicks = shortUrl.click_count || 0;
+    const lastVisitedAt = shortUrl.last_visited_at;
+
+    // Get recent visits (last 20)
+    const recentVisitsResult = await pool.query(
+      `SELECT 
+        id,
+        visited_at,
+        browser,
+        device_type,
+        os,
+        ip_address,
+        country
+      FROM visits 
+      WHERE short_url_id = $1 
+      ORDER BY visited_at DESC 
+      LIMIT 20`,
+      [id]
+    );
+
+    const recentVisits = recentVisitsResult.rows.map((visit) => ({
+      id: visit.id,
+      timestamp: visit.visited_at,
+      browser: visit.browser || 'Unknown',
+      deviceType: visit.device_type || 'Unknown',
+      os: visit.os || 'Unknown',
+      ipAddress: visit.ip_address || 'Unknown',
+      country: visit.country || 'Unknown',
+    }));
+
+    // Get clicks per day for last 7 days
+    const clicksPerDayResult = await pool.query(
+      `SELECT 
+        DATE(visited_at) as date,
+        COUNT(*) as clicks
+      FROM visits 
+      WHERE short_url_id = $1 
+        AND visited_at >= NOW() - INTERVAL '7 days'
+      GROUP BY DATE(visited_at)
+      ORDER BY DATE(visited_at)`,
+      [id]
+    );
+
+    const clicksPerDay = clicksPerDayResult.rows.map((row) => ({
+      date: new Date(row.date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      }),
+      clicks: parseInt(row.clicks),
+    }));
+
+    // Fill in missing days
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const found = clicksPerDay.find((d) => d.date === dateStr);
+      last7Days.push(found || { date: dateStr, clicks: 0 });
+    }
+
+    // Get most active hour
+    const mostActiveHourResult = await pool.query(
+      `SELECT 
+        EXTRACT(HOUR FROM visited_at) as hour,
+        COUNT(*) as clicks
+      FROM visits 
+      WHERE short_url_id = $1 
+      GROUP BY EXTRACT(HOUR FROM visited_at)
+      ORDER BY clicks DESC 
+      LIMIT 1`,
+      [id]
+    );
+
+    const mostActiveHour = mostActiveHourResult.rows.length > 0 
+      ? parseInt(mostActiveHourResult.rows[0].hour)
+      : null;
+
+    // Get device type breakdown
+    const deviceBreakdownResult = await pool.query(
+      `SELECT 
+        device_type,
+        COUNT(*) as count
+      FROM visits 
+      WHERE short_url_id = $1 
+      GROUP BY device_type`,
+      [id]
+    );
+
+    const deviceBreakdown = deviceBreakdownResult.rows.reduce((acc, row) => {
+      const deviceType = row.device_type || 'Unknown';
+      acc[deviceType] = parseInt(row.count);
+      return acc;
+    }, {});
+
+    // Get browser breakdown
+    const browserBreakdownResult = await pool.query(
+      `SELECT 
+        browser,
+        COUNT(*) as count
+      FROM visits 
+      WHERE short_url_id = $1 
+      GROUP BY browser
+      ORDER BY count DESC`,
+      [id]
+    );
+
+    const browserBreakdown = browserBreakdownResult.rows.map((row) => ({
+      name: row.browser || 'Unknown',
+      count: parseInt(row.count),
+    }));
+
+    res.json({
+      totalClicks,
+      lastVisitedAt,
+      recentVisits,
+      clicksPerDay: last7Days,
+      mostActiveHour,
+      deviceBreakdown: {
+        desktop: deviceBreakdown['Desktop'] || 0,
+        mobile: deviceBreakdown['Mobile'] || 0,
+        tablet: deviceBreakdown['Tablet'] || 0,
+        other: deviceBreakdown['Unknown'] || 0,
+      },
+      browserBreakdown,
+    });
+  } catch (error) {
+    console.error('Get analytics error:', error);
+    res.status(500).json({ error: 'An error occurred while fetching analytics' });
   }
 };
