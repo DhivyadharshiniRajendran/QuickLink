@@ -12,24 +12,17 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // CORS middleware - must be at the top, before any routes
+// Allow all origins for mobile redirect compatibility
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'http://127.0.0.1:5173',
-    'https://quick-link-green.vercel.app'
-  ],
-  credentials: true,
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 console.log('\n========== CORS CONFIGURATION ==========');
-console.log('Allowed origins:');
-console.log('  - http://localhost:5173');
-console.log('  - http://localhost:3000');
-console.log('  - http://127.0.0.1:5173');
-console.log('  - https://quick-link-green.vercel.app');
+console.log('Allowed origins: * (ALL ORIGINS)');
+console.log('Reason: Mobile device compatibility for short URL redirects');
+console.log('Methods: GET, POST, PUT, DELETE, OPTIONS');
 console.log('=========================================\n');
 
 // Handle preflight OPTIONS requests for all routes

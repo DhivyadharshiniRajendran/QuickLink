@@ -170,6 +170,8 @@ export const deleteUrl = async (req, res) => {
 export const redirectToUrl = async (req, res) => {
   try {
     const { shortCode } = req.params;
+    console.log(`\n📱 Redirect request for short code: ${shortCode}`);
+    console.log(`   User Agent: ${req.get('user-agent')}`);
 
     const result = await pool.query(
       'SELECT id, original_url FROM short_urls WHERE short_code = $1',
@@ -177,29 +179,42 @@ export const redirectToUrl = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
+      console.log(`❌ Short code not found: ${shortCode}`);
       return res.status(404).json({ error: 'Short URL not found' });
     }
 
-    const shortUrl = result.rows[0];
+    let originalUrl = result.rows[0].original_url;
+    const shortUrlId = result.rows[0].id;
+
+    // Ensure URL has protocol prefix for proper mobile redirect
+    if (!originalUrl.startsWith('http://') && !originalUrl.startsWith('https://')) {
+      console.log(`⚠️  Adding https:// prefix to URL: ${originalUrl}`);
+      originalUrl = `https://${originalUrl}`;
+    }
+
+    console.log(`✓ Original URL: ${originalUrl}`);
 
     // Record visit in the visits table
     await pool.query(
       'INSERT INTO visits (short_url_id, visited_at) VALUES ($1, NOW())',
-      [shortUrl.id]
+      [shortUrlId]
     );
 
     // Increment click count in the short_urls table
     await pool.query(
       'UPDATE short_urls SET click_count = click_count + 1 WHERE id = $1',
-      [shortUrl.id]
+      [shortUrlId]
     );
 
-    console.log(`✓ Click tracked: ${shortCode} (ID: ${shortUrl.id}) | Visit recorded and click count incremented`);
+    console.log(`✓ Click tracked: ${shortCode} (ID: ${shortUrlId}) | Visit recorded and click count incremented`);
 
-    // Redirect to original URL
-    res.redirect(shortUrl.original_url);
+    // Use 301 permanent redirect for better mobile compatibility
+    // 301 = Moved Permanently (better for SEO and mobile browsers)
+    // vs 302 = Found (temporary redirect)
+    console.log(`✓ Sending 301 permanent redirect to: ${originalUrl}\n`);
+    res.redirect(301, originalUrl);
   } catch (error) {
-    console.error('Redirect error:', error);
+    console.error('❌ Redirect error:', error);
     res.status(500).json({ error: 'An error occurred' });
   }
 };
