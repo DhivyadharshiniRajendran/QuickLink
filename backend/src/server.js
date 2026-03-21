@@ -128,8 +128,25 @@ app.get('/:shortCode', (req, res, next) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+  console.error('\n❌ ===== UNHANDLED ERROR =====');
+  console.error('Error Message:', err.message);
+  console.error('Error Code:', err.code);
+  console.error('Error Severity:', err.severity);
+  console.error('Stack Trace:', err.stack);
+  console.error('Request:', {
+    method: req.method,
+    path: req.path,
+    url: req.url,
+    userId: req.userId || 'not authenticated'
+  });
+  console.error('Full Error Object:', JSON.stringify(err, null, 2));
+  console.error('=============================\n');
+  
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: err.message,
+    code: err.code
+  });
 });
 
 // 404 handler
