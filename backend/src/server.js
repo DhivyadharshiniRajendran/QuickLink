@@ -24,33 +24,85 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+console.log('\n========== CORS CONFIGURATION ==========');
+console.log('Allowed origins:');
+console.log('  - http://localhost:5173');
+console.log('  - http://localhost:3000');
+console.log('  - http://127.0.0.1:5173');
+console.log('  - https://quick-link-green.vercel.app');
+console.log('=========================================\n');
+
 // Handle preflight OPTIONS requests for all routes
 app.options('*', cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging middleware for debugging
+// Detailed request logging middleware for debugging
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  console.log('\n--- INCOMING REQUEST ---');
+  console.log(`Timestamp: ${new Date().toISOString()}`);
+  console.log(`Method: ${req.method}`);
+  console.log(`Full URL: ${req.url}`);
+  console.log(`Path: ${req.path}`);
+  console.log(`Base URL: ${req.baseUrl}`);
+  console.log(`Query: ${JSON.stringify(req.query)}`);
+  console.log(`Headers: ${JSON.stringify({
+    origin: req.get('origin'),
+    'content-type': req.get('content-type'),
+    authorization: req.get('authorization') ? 'Bearer ***' : 'none'
+  })}`);
+  console.log('---');
+  
+  // Capture response status for logging
+  const originalSend = res.send;
+  res.send = function (data) {
+    console.log(`✓ Response: ${req.method} ${req.path} → ${res.statusCode}`);
+    return originalSend.call(this, data);
+  };
+  
   next();
 });
 
 // Initialize database on startup
 await initializeDatabase();
 
+console.log('\n========== STARTUP INFORMATION ==========');
+console.log('The frontend MUST construct URLs as follows:');
+console.log('  1. Get VITE_API_URL from environment (e.g., https://quicklink-2v4z.onrender.com/api)');
+console.log('  2. Append endpoint path (e.g., /auth/signup)');
+console.log('  3. Full URL: ${VITE_API_URL}/auth/signup');
+console.log('      → https://quicklink-2v4z.onrender.com/api/auth/signup');
+console.log('\nIMPORTANT: VITE_API_URL MUST end with /api');
+console.log('  ✓ Correct:  https://quicklink-2v4z.onrender.com/api');
+console.log('  ✗ Wrong:    https://quicklink-2v4z.onrender.com');
+console.log('=========================================\n');
+
 // Log all registered routes for debugging
-console.log('\n========== REGISTERED ROUTES ==========');
-console.log('GET  /health');
-console.log('POST /api/auth/signup');
-console.log('POST /api/auth/login');
-console.log('GET  /api/auth/me (protected)');
-console.log('POST /api/urls/create (protected)');
-console.log('GET  /api/urls/my-urls (protected)');
-console.log('DELETE /api/urls/:id (protected)');
-console.log('GET  /api/urls/details/:id (protected)');
-console.log('GET  /:shortCode (public redirect)');
-console.log('========================================\n');
+console.log('\n========== ROUTE STRUCTURE ==========');
+console.log('Routes mounted at the following:');
+console.log('\n  app.use("/api/auth", authRoutes)');
+console.log('    ├─ POST   /signup');
+console.log('    ├─ POST   /login');
+console.log('    └─ GET    /me');
+console.log('\n  app.use("/api/urls", urlRoutes)');
+console.log('    ├─ POST   /create');
+console.log('    ├─ GET    /my-urls');
+console.log('    ├─ GET    /details/:id');
+console.log('    └─ DELETE /:id');
+console.log('\n  app.get("/health") - public');
+console.log('  app.get("/:shortCode") - public redirect (6 char codes only)');
+console.log('\nFull paths accessible at:');
+console.log('  POST   /api/auth/signup');
+console.log('  POST   /api/auth/login');
+console.log('  GET    /api/auth/me');
+console.log('  POST   /api/urls/create');
+console.log('  GET    /api/urls/my-urls');
+console.log('  GET    /api/urls/details/:id');
+console.log('  DELETE /api/urls/:id');
+console.log('  GET    /health');
+console.log('  GET    /:shortCode (public)');
+console.log('====================================\n');
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -82,9 +134,12 @@ app.use((err, req, res, next) => {
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).json({ error: 'Not found' });
+  console.log(`✗ 404 Not Found: ${req.method} ${req.path}`);
+  res.status(404).json({ error: 'Not found', path: req.path, method: req.method });
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`\n✓ Server is running on port ${PORT}`);
+  console.log(`✓ Ready to accept requests from configured origins`);
+  console.log(`✓ Database initialized and connected\n`);
 });
