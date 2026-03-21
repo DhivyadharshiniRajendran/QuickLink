@@ -11,40 +11,21 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allowed origins
-    const allowedOrigins = [
-      'http://localhost:5173',      // Local development
-      'http://localhost:3000',      // Alternative local dev
-      'http://127.0.0.1:5173',      // Local development (127.0.0.1)
-      'https://quicklink-vert.vercel.app', // Vercel production
-      process.env.CLIENT_URL,       // Environment variable override
-    ].filter(Boolean); // Remove undefined/null values
-
-    // Development mode: allow any localhost
-    if (process.env.NODE_ENV === 'development') {
-      if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
-        callback(null, true);
-      } else {
-        callback(new Error('CORS policy violation'));
-      }
-    } else {
-      // Production: allow specific origins
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('CORS policy violation'));
-      }
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+// CORS middleware - must be at the top, before any routes
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+    'https://quick-link-green.vercel.app'
+  ],
   credentials: true,
-};
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
-app.use(cors(corsOptions));
+// Handle preflight OPTIONS requests for all routes
+app.options('*', cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
