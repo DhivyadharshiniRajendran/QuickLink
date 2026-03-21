@@ -14,23 +14,33 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 const corsOptions = {
   origin: function (origin, callback) {
-    // In development, allow requests from any localhost origin
+    // Allowed origins
+    const allowedOrigins = [
+      'http://localhost:5173',      // Local development
+      'http://localhost:3000',      // Alternative local dev
+      'http://127.0.0.1:5173',      // Local development (127.0.0.1)
+      'https://quicklink-vert.vercel.app', // Vercel production
+      process.env.CLIENT_URL,       // Environment variable override
+    ].filter(Boolean); // Remove undefined/null values
+
+    // Development mode: allow any localhost
     if (process.env.NODE_ENV === 'development') {
-      // Allow both no origin (like mobile apps, curl requests) and localhost origins
       if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
         callback(null, true);
       } else {
         callback(new Error('CORS policy violation'));
       }
     } else {
-      // In production, use the specified CLIENT_URL
-      if (process.env.CLIENT_URL && origin === process.env.CLIENT_URL) {
+      // Production: allow specific origins
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error('CORS policy violation'));
       }
     }
   },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 };
 
