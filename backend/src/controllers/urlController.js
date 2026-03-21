@@ -4,7 +4,13 @@ import { generateShortCode, isValidUrl } from '../utils/helpers.js';
 export const createShortUrl = async (req, res) => {
   try {
     const { originalUrl } = req.body;
-    const userId = req.userId;
+    
+    // Support both req.user and req.userId
+    const userId = req.user?.id || req.userId;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized - No user found' });
+    }
 
     if (!originalUrl) {
       return res.status(400).json({ error: 'Original URL is required' });
@@ -56,19 +62,25 @@ export const createShortUrl = async (req, res) => {
 
 export const getUserUrls = async (req, res) => {
   try {
-    const userId = req.userId;
+    // Check if user is authenticated
+    if (!req.user) {
+      console.error('❌ getUserUrls: No user object in request');
+      return res.status(401).json({ error: 'Unauthorized - No user found' });
+    }
+
+    const userId = req.user.id || req.userId;
+    
+    if (!userId) {
+      console.error('❌ getUserUrls: No user ID found in request');
+      return res.status(401).json({ error: 'Unauthorized - No user ID' });
+    }
+
     console.log(`📍 getUserUrls: Starting for user ID: ${userId}`);
 
     // Test database connection
     console.log('🔄 Testing database connection...');
     const connectionTest = await pool.query('SELECT NOW() as current_time');
     console.log(`✓ Database connection OK: ${connectionTest.rows[0].current_time}`);
-
-    // Verify user_id is present
-    if (!userId) {
-      console.error('❌ getUserUrls: No user ID found in request');
-      return res.status(401).json({ error: 'User ID not found in request' });
-    }
 
     console.log('🔍 Executing query to fetch user URLs...');
     const result = await pool.query(
@@ -120,7 +132,13 @@ export const getUserUrls = async (req, res) => {
 export const deleteUrl = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.userId;
+    
+    // Support both req.user and req.userId
+    const userId = req.user?.id || req.userId;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized - No user found' });
+    }
 
     // Verify ownership
     const urlCheck = await pool.query(
@@ -189,10 +207,16 @@ export const redirectToUrl = async (req, res) => {
 export const getUrlDetails = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.userId;
+    
+    // Support both req.user and req.userId
+    const userId = req.user?.id || req.userId;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized - No user found' });
+    }
 
     const urlResult = await pool.query(
-      'SELECT user_id, original_url, short_code, created_at FROM short_urls WHERE id = $1',
+      'SELECT id, user_id, original_url, short_code, created_at FROM short_urls WHERE id = $1',
       [id]
     );
 

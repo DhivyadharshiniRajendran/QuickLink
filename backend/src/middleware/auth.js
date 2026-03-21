@@ -22,6 +22,15 @@ export const authenticateToken = (req, res, next) => {
   }
 
   console.log('  ✓ Token valid. User ID:', decoded.userId);
+  
+  // Set user object for standard req.user.id access
+  req.user = {
+    id: decoded.userId,
+    userId: decoded.userId // For backward compatibility
+  };
+  
+  // Also set req.userId for backward compatibility with existing code
   req.userId = decoded.userId;
+  
   next();
 };
