@@ -10,13 +10,13 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Protected routes
+// Protected routes - must be BEFORE /:shortCode
 router.post('/create', authenticateToken, createShortUrl);
 router.get('/my-urls', authenticateToken, getUserUrls);
-router.delete('/:id', authenticateToken, deleteUrl);
 router.get('/details/:id', authenticateToken, getUrlDetails);
+router.delete('/:id', authenticateToken, deleteUrl);
 
-// Public redirect route
+// Public redirect - must be LAST
 router.get('/:shortCode', redirectToUrl);
 
 export default router;
