@@ -1,10 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useUrlContext } from '../context/UrlContext';
 import './styles/AnalyticsOverview.css';
 
 export const AnalyticsOverview = () => {
-  const { urls } = useUrlContext();
+  const { urls, fetchUrls, loading } = useUrlContext();
 
+  // Fetch fresh data when component mounts
+  useEffect(() => {
+    fetchUrls();
+  }, [fetchUrls]);
+
+  // Calculate analytics from current URLs
   const totalClicks = urls.reduce((sum, url) => sum + (url.clicks || 0), 0);
   const totalUrls = urls.length;
   const avgClicksPerUrl = totalUrls > 0 ? (totalClicks / totalUrls).toFixed(1) : '0';
@@ -21,7 +27,7 @@ export const AnalyticsOverview = () => {
           <div className="stat-icon">🔗</div>
           <div className="stat-info">
             <span className="stat-label">Total URLs Created</span>
-            <span className="stat-value">{totalUrls}</span>
+            <span className="stat-value">{loading ? '...' : totalUrls}</span>
           </div>
         </div>
 
@@ -29,7 +35,7 @@ export const AnalyticsOverview = () => {
           <div className="stat-icon">👆</div>
           <div className="stat-info">
             <span className="stat-label">Total Clicks</span>
-            <span className="stat-value">{totalClicks}</span>
+            <span className="stat-value">{loading ? '...' : totalClicks}</span>
           </div>
         </div>
 
@@ -37,7 +43,7 @@ export const AnalyticsOverview = () => {
           <div className="stat-icon">📈</div>
           <div className="stat-info">
             <span className="stat-label">Avg Clicks/URL</span>
-            <span className="stat-value">{avgClicksPerUrl}</span>
+            <span className="stat-value">{loading ? '...' : avgClicksPerUrl}</span>
           </div>
         </div>
 
@@ -46,7 +52,7 @@ export const AnalyticsOverview = () => {
           <div className="stat-info">
             <span className="stat-label">Most Clicked URL</span>
             <span className="stat-value">
-              {mostClickedUrl ? `${mostClickedUrl.clicks} clicks` : 'No data'}
+              {loading ? '...' : mostClickedUrl ? `${mostClickedUrl.clicks} clicks` : 'No data'}
             </span>
           </div>
         </div>

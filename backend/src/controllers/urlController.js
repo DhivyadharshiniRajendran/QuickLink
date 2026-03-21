@@ -29,9 +29,9 @@ export const createShortUrl = async (req, res) => {
       }
     }
 
-    // Insert short URL
+    // Insert short URL with initial click_count of 0
     const result = await pool.query(
-      'INSERT INTO short_urls (user_id, original_url, short_code, created_at) VALUES ($1, $2, $3, NOW()) RETURNING id, original_url, short_code, created_at',
+      'INSERT INTO short_urls (user_id, original_url, short_code, click_count, created_at) VALUES ($1, $2, $3, 0, NOW()) RETURNING id, original_url, short_code, created_at, click_count',
       [userId, originalUrl, shortCode]
     );
 
@@ -45,7 +45,7 @@ export const createShortUrl = async (req, res) => {
         shortCode: shortUrl.short_code,
         shortUrl: `${process.env.BASE_URL || 'http://localhost:3001'}/${shortUrl.short_code}`,
         createdAt: shortUrl.created_at,
-        clicks: 0,
+        clicks: shortUrl.click_count || 0,
       },
     });
   } catch (error) {
@@ -65,7 +65,8 @@ export const getUserUrls = async (req, res) => {
         su.original_url, 
         su.short_code, 
         su.created_at,
-        COUNT(v.id) as clicks
+        su.click_count,
+        COUNT(v.id) as visit_count
       FROM short_urls su
       LEFT JOIN visits v ON su.id = v.short_url_id
       WHERE su.user_id = $1
@@ -81,7 +82,7 @@ export const getUserUrls = async (req, res) => {
       shortCode: url.short_code,
       shortUrl: `${process.env.BASE_URL || 'http://localhost:3001'}/${url.short_code}`,
       createdAt: url.created_at,
-      clicks: parseInt(url.clicks) || 0,
+      clicks: parseInt(url.click_count) || 0,
     }));
 
     res.json({ urls });
@@ -138,13 +139,21 @@ export const redirectToUrl = async (req, res) => {
 
     const shortUrl = result.rows[0];
 
-    // Record visit
+    // Record visit in the visits table
     await pool.query(
       'INSERT INTO visits (short_url_id, visited_at) VALUES ($1, NOW())',
       [shortUrl.id]
     );
 
-    // Redirect
+    // Increment click count in the short_urls table
+    await pool.query(
+      'UPDATE short_urls SET click_count = click_count + 1 WHERE id = $1',
+      [shortUrl.id]
+    );
+
+    console.log(`✓ Click tracked: ${shortCode} (ID: ${shortUrl.id}) | Visit recorded and click count incremented`);
+
+    // Redirect to original URL
     res.redirect(shortUrl.original_url);
   } catch (error) {
     console.error('Redirect error:', error);
