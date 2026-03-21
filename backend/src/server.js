@@ -100,8 +100,11 @@ console.log('  POST   /api/urls/create');
 console.log('  GET    /api/urls/my-urls');
 console.log('  GET    /api/urls/details/:id');
 console.log('  DELETE /api/urls/:id');
-console.log('  GET    /health');
-console.log('  GET    /:shortCode (public)');
+console.log('\n  DEBUG ROUTES (remove before production):');
+console.log('  GET    /health - health check');
+console.log('  GET    /test-db - test database connection');
+console.log('  GET    /test-schema - check table schema');
+console.log('  GET    /test-urls/:userId - test query for specific user');
 console.log('====================================\n');
 
 // Routes
@@ -111,6 +114,97 @@ app.use('/api/urls', urlRoutes);
 // Health check (must be before short code handler since "health" is 6 chars)
 app.get('/health', (req, res) => {
   res.json({ status: 'OK' });
+});
+
+// Database connection test route
+app.get('/test-db', async (req, res) => {
+  try {
+    console.log('🔍 Testing database connection...');
+    const result = await pool.query('SELECT NOW()');
+    console.log('✅ Database connection successful:', result.rows[0]);
+    res.json({ 
+      status: 'Database connected',
+      timestamp: result.rows[0].now,
+      message: 'PostgreSQL connection is working'
+    });
+  } catch (err) {
+    console.error('❌ Database connection error:', err.message);
+    console.error('Error code:', err.code);
+    res.status(500).json({ 
+      error: 'Database connection failed',
+      message: err.message,
+      code: err.code
+    });
+  }
+});
+
+// Debug: Test table and schema
+app.get('/test-schema', async (req, res) => {
+  try {
+    console.log('🔍 Testing database schema...');
+    
+    // Check if short_urls table exists
+    const tableCheck = await pool.query(
+      `SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'short_urls')`
+    );
+    console.log('short_urls table exists:', tableCheck.rows[0].exists);
+    
+    // Check columns
+    const columnsCheck = await pool.query(
+      `SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'short_urls' ORDER BY ordinal_position`
+    );
+    console.log('Columns in short_urls:', columnsCheck.rows.map(r => `${r.column_name} (${r.data_type})`));
+    
+    // Try a simple select
+    const simpleSelect = await pool.query('SELECT COUNT(*) as count FROM short_urls');
+    console.log('Total rows in short_urls:', simpleSelect.rows[0].count);
+    
+    res.json({
+      status: 'Schema check passed',
+      tableExists: tableCheck.rows[0].exists,
+      columns: columnsCheck.rows,
+      totalRows: simpleSelect.rows[0].count
+    });
+  } catch (err) {
+    console.error('❌ Schema check error:', err.message);
+    res.status(500).json({
+      error: 'Schema check failed',
+      message: err.message,
+      code: err.code
+    });
+  }
+});
+
+// Debug: Test user URLs query
+app.get('/test-urls/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log(`🔍 Testing URLs query for user ${userId}...`);
+    
+    const result = await pool.query(
+      `SELECT id, original_url, short_code, created_at, click_count, user_id 
+       FROM short_urls 
+       WHERE user_id = $1 
+       ORDER BY created_at DESC`,
+      [userId]
+    );
+    
+    console.log(`Found ${result.rows.length} URLs for user ${userId}`);
+    res.json({
+      status: 'Query successful',
+      userId,
+      count: result.rows.length,
+      urls: result.rows
+    });
+  } catch (err) {
+    console.error('❌ Query error:', err.message);
+    res.status(500).json({
+      error: 'Query failed',
+      message: err.message,
+      code: err.code,
+      userId: req.params.userId
+    });
+  }
 });
 
 // Short code redirect handler (must be after /api routes and /health but before 404)
