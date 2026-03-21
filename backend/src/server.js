@@ -30,8 +30,27 @@ app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Request logging middleware for debugging
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  next();
+});
+
 // Initialize database on startup
 await initializeDatabase();
+
+// Log all registered routes for debugging
+console.log('\n========== REGISTERED ROUTES ==========');
+console.log('GET  /health');
+console.log('POST /api/auth/signup');
+console.log('POST /api/auth/login');
+console.log('GET  /api/auth/me (protected)');
+console.log('POST /api/urls/create (protected)');
+console.log('GET  /api/urls/my-urls (protected)');
+console.log('DELETE /api/urls/:id (protected)');
+console.log('GET  /api/urls/details/:id (protected)');
+console.log('GET  /:shortCode (public redirect)');
+console.log('========================================\n');
 
 // Routes
 app.use('/api/auth', authRoutes);
