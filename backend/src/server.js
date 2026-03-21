@@ -10,6 +10,29 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const BASE_URL = process.env.BASE_URL;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// ========== CRITICAL: VALIDATE PRODUCTION CONFIGURATION ==========
+console.log('\n========== DEPLOYMENT VALIDATION ==========');
+console.log(`Environment: ${NODE_ENV}`);
+console.log(`Port: ${PORT}`);
+console.log(`BASE_URL: ${BASE_URL || 'NOT SET (will default to http://localhost:3001)'}`);
+
+if (NODE_ENV === 'production') {
+  if (!BASE_URL || BASE_URL.includes('localhost') || BASE_URL.includes('127.0.0.1')) {
+    console.error('\n❌ CRITICAL ERROR: BASE_URL is not set correctly for production!');
+    console.error('   This will break short URL generation and redirects!\n');
+    console.error('   REQUIRED: Set BASE_URL in Render environment variables');
+    console.error('   Format: https://your-render-url.onrender.com');
+    console.error('   Example: https://quicklink-2v4z.onrender.com\n');
+    console.error('   Short URLs will be generated using this BASE_URL');
+    console.error('   If wrong, users will be redirected to wrong domain!\n');
+  } else {
+    console.log('✓ Production BASE_URL is properly configured');
+  }
+}
+console.log('=========================================\n');
 
 // CORS middleware - must be at the top, before any routes
 // Allow all origins for mobile redirect compatibility
@@ -60,45 +83,60 @@ app.use((req, res, next) => {
 // Initialize database on startup
 await initializeDatabase();
 
-console.log('\n========== STARTUP INFORMATION ==========');
-console.log('The frontend MUST construct URLs as follows:');
-console.log('  1. Get VITE_API_URL from environment (e.g., https://quicklink-2v4z.onrender.com/api)');
-console.log('  2. Append endpoint path (e.g., /auth/signup)');
-console.log('  3. Full URL: ${VITE_API_URL}/auth/signup');
-console.log('      → https://quicklink-2v4z.onrender.com/api/auth/signup');
-console.log('\nIMPORTANT: VITE_API_URL MUST end with /api');
-console.log('  ✓ Correct:  https://quicklink-2v4z.onrender.com/api');
-console.log('  ✗ Wrong:    https://quicklink-2v4z.onrender.com');
-console.log('=========================================\n');
+console.log('\n========== FRONTEND API CONFIGURATION ==========');
+console.log('The frontend MUST use the correct API URL:\n');
+
+const FRONTEND_API_BASE = BASE_URL ? `${BASE_URL}/api` : 'http://localhost:3001/api';
+console.log(`Frontend VITE_API_URL should be: ${FRONTEND_API_BASE}`);
+console.log('\nFrontend environment variable (.env):');
+console.log(`  VITE_API_URL=${FRONTEND_API_BASE}`);
+console.log('\nFrontend API calls will be:\n');
+console.log(`  POST   ${FRONTEND_API_BASE}/auth/signup`);
+console.log(`  POST   ${FRONTEND_API_BASE}/auth/login`);
+console.log(`  GET    ${FRONTEND_API_BASE}/auth/me`);
+console.log(`  POST   ${FRONTEND_API_BASE}/urls/create`);
+console.log(`  GET    ${FRONTEND_API_BASE}/urls/my-urls`);
+console.log(`  GET    ${FRONTEND_API_BASE}/urls/details/:id`);
+console.log(`  GET    ${FRONTEND_API_BASE}/urls/analytics/:id`);
+console.log(`  DELETE ${FRONTEND_API_BASE}/urls/:id`);
+console.log('\nShort URL redirects (PUBLIC, no API prefix):');
+console.log(`  GET    ${BASE_URL || 'http://localhost:3001'}/abc123 → original URL`);
+console.log('===============================================\n');
 
 // Log all registered routes for debugging
-console.log('\n========== ROUTE STRUCTURE ==========');
-console.log('Routes mounted at the following:');
-console.log('\n  app.use("/api/auth", authRoutes)');
-console.log('    ├─ POST   /signup');
-console.log('    ├─ POST   /login');
-console.log('    └─ GET    /me');
-console.log('\n  app.use("/api/urls", urlRoutes)');
-console.log('    ├─ POST   /create');
-console.log('    ├─ GET    /my-urls');
-console.log('    ├─ GET    /details/:id');
-console.log('    └─ DELETE /:id');
-console.log('\n  app.get("/health") - public');
-console.log('  app.get("/:shortCode") - public redirect (6 char codes only)');
-console.log('\nFull paths accessible at:');
+console.log('\n========== ROUTE REGISTRATION ORDER (CRITICAL) ==========');
+console.log('Routes registered in this EXACT order:\n');
+console.log('1. CORS middleware - global');
+console.log('2. body-parser (JSON, URL encoded) - global');
+console.log('3. Request logging middleware - global');
+console.log('4. Database initialization');
+console.log('5. app.use("/api/auth", authRoutes) - Auth endpoints');
+console.log('6. app.use("/api/urls", urlRoutes) - URL API endpoints (NO short code handler here!)');
+console.log('7. app.get("/health") - Health check');
+console.log('8. Debug routes (/test-db, /test-schema, /test-urls/:userId)');
+console.log('9. ⭐ app.get("/:shortCode") - SHORT URL REDIRECT (CRITICAL POSITION!)');
+console.log('   → Only matches exactly 6 alphanumeric characters');
+console.log('   → Must be BEFORE error/404 handlers');
+console.log('   → Examples: /abc123, /xY9mK2, /QwErty');
+console.log('10. Error handling middleware (500 errors)');
+console.log('11. 404 Not Found handler (must be LAST)\n');
+
+console.log('IMPORTANT: If short URLs don\'t redirect:');
+console.log('  1. Check BASE_URL environment variable');
+console.log('  2. Verify short code in database uses correct domain');
+console.log('  3. Check that /:shortCode handler is NOT moved after 404\n');
+
+console.log('Accessible endpoints:');
 console.log('  POST   /api/auth/signup');
 console.log('  POST   /api/auth/login');
 console.log('  GET    /api/auth/me');
 console.log('  POST   /api/urls/create');
 console.log('  GET    /api/urls/my-urls');
 console.log('  GET    /api/urls/details/:id');
+console.log('  GET    /api/urls/analytics/:id');
 console.log('  DELETE /api/urls/:id');
-console.log('\n  DEBUG ROUTES (remove before production):');
-console.log('  GET    /health - health check');
-console.log('  GET    /test-db - test database connection');
-console.log('  GET    /test-schema - check table schema');
-console.log('  GET    /test-urls/:userId - test query for specific user');
-console.log('====================================\n');
+console.log('  GET    /{6-char-code} - SHORT URL REDIRECT');
+console.log('========================================================\n');
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -200,16 +238,29 @@ app.get('/test-urls/:userId', async (req, res) => {
   }
 });
 
-// Short code redirect handler (must be after /api routes and /health but before 404)
-// Matches requests like /ta22QV (6 character alphanumeric short codes)
+// ========== CRITICAL: Short code redirect handler ==========
+// MUST remain AFTER /api routes but BEFORE static middleware and 404
+// This is the PRIMARY handler for public short URL redirects
+// DO NOT move this handler - routing order is critical!
 app.get('/:shortCode', (req, res, next) => {
   const { shortCode } = req.params;
-  // Only handle 6-character alphanumeric requests that look like short codes
-  // This prevents accidentally catching /health or other legit routes
-  if (/^[a-zA-Z0-9]{6}$/.test(shortCode)) {
+  
+  // STRICT VALIDATION: Only handle 6-character alphanumeric codes
+  // This prevents accidentally catching other routes like /favicon.ico, /health, etc.
+  const isValidShortCode = /^[a-zA-Z0-9]{6}$/.test(shortCode);
+  
+  if (isValidShortCode) {
+    console.log(`\n✅ SHORT URL REDIRECT HANDLER MATCHED`);
+    console.log(`   Pattern matched: /${shortCode} (6 alphanumeric characters)`);
+    console.log(`   Request URL: ${req.originalUrl}`);
+    console.log(`   User Agent: ${req.get('user-agent')?.substring(0, 100) || 'unknown'}`);
+    console.log(`   Client IP: ${req.headers['x-forwarded-for'] || req.connection.remoteAddress}`);
+    console.log(`   Calling redirectToUrl controller...\n`);
     redirectToUrl(req, res, next);
   } else {
-    next(); // Pass to next handler (404, etc.)
+    // This is NOT a short code, pass to next handler (error/404)
+    console.log(`   Route /${shortCode} does NOT match pattern (not 6 alphanumeric) - passing to error handler`);
+    next();
   }
 });
 
@@ -245,5 +296,30 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`\n✓ Server is running on port ${PORT}`);
   console.log(`✓ Ready to accept requests from configured origins`);
-  console.log(`✓ Database initialized and connected\n`);
+  console.log(`✓ Database initialized and connected`);
+  console.log(`✓ Short URL handler registered (/:shortCode route)`);
+  
+  console.log(`\n========== CRITICAL: SHORT URL CONFIGURATION ==========`);
+  console.log(`Current BASE_URL: ${BASE_URL || 'NOT SET'}`);
+  console.log(`Environment: ${NODE_ENV}`);
+  
+  if (!BASE_URL) {
+    console.log(`\n⚠️  WARNING: BASE_URL is not set!`);
+    console.log(`   Defaulting to: http://localhost:3001`);
+    console.log(`   This is fine for development.`);
+    console.log(`   For production on Render, set BASE_URL environment variable!`);
+  } else if (BASE_URL.includes('localhost') || BASE_URL.includes('127.0.0.1')) {
+    console.log(`\n⚠️  Development mode detected`);
+    console.log(`   Using local base URL for short links`);
+  } else {
+    console.log(`\n✓ Production BASE_URL configured: ${BASE_URL}`);
+    console.log(`   Short URLs will be: ${BASE_URL}/{shortCode}`);
+  }
+  
+  console.log(`\nTroubleshooting short URLs not redirecting:`);
+  console.log(`  1. Check BASE_URL environment variable in Render`);
+  console.log(`  2. Verify database has correct short URLs (check BASE_URL there)`);
+  console.log(`  3. Test redirect: curl -I ${BASE_URL || 'http://localhost:3001'}/abc123`);
+  console.log(`  4. Check logs for "SHORT URL REDIRECT HANDLER MATCHED" message`);
+  console.log(`======================================================\n`);
 });
