@@ -57,7 +57,20 @@ export const createShortUrl = async (req, res) => {
 export const getUserUrls = async (req, res) => {
   try {
     const userId = req.userId;
+    console.log(`📍 getUserUrls: Starting for user ID: ${userId}`);
 
+    // Test database connection
+    console.log('🔄 Testing database connection...');
+    const connectionTest = await pool.query('SELECT NOW() as current_time');
+    console.log(`✓ Database connection OK: ${connectionTest.rows[0].current_time}`);
+
+    // Verify user_id is present
+    if (!userId) {
+      console.error('❌ getUserUrls: No user ID found in request');
+      return res.status(401).json({ error: 'User ID not found in request' });
+    }
+
+    console.log('🔍 Executing query to fetch user URLs...');
     const result = await pool.query(
       `
       SELECT 
@@ -66,15 +79,15 @@ export const getUserUrls = async (req, res) => {
         su.short_code, 
         su.created_at,
         su.click_count,
-        COUNT(v.id) as visit_count
+        su.user_id
       FROM short_urls su
-      LEFT JOIN visits v ON su.id = v.short_url_id
       WHERE su.user_id = $1
-      GROUP BY su.id
       ORDER BY su.created_at DESC
       `,
       [userId]
     );
+
+    console.log(`✓ Query executed successfully. Found ${result.rows.length} URLs for user ${userId}`);
 
     const urls = result.rows.map((url) => ({
       id: url.id,
@@ -85,10 +98,22 @@ export const getUserUrls = async (req, res) => {
       clicks: parseInt(url.click_count) || 0,
     }));
 
+    console.log(`✓ Mapped ${urls.length} URLs for response`);
     res.json({ urls });
   } catch (error) {
-    console.error('Get user URLs error:', error);
-    res.status(500).json({ error: 'An error occurred while fetching URLs' });
+    console.error('❌ getUserUrls error - FULL DETAILS:');
+    console.error('Error Message:', error.message);
+    console.error('Error Code:', error.code);
+    console.error('Error Stack:', error.stack);
+    console.error('Full Error Object:', JSON.stringify(error, null, 2));
+    
+    // More descriptive error response
+    if (error.code === '42P01') {
+      console.error('COLUMN/TABLE NOT FOUND ERROR - Check if table/columns exist in database');
+      return res.status(500).json({ error: 'Database table or column not found. Check schema.' });
+    }
+    
+    res.status(500).json({ error: 'An error occurred while fetching URLs', details: error.message });
   }
 };
 
