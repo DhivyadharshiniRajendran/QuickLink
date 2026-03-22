@@ -1,335 +1,216 @@
 # QuickLink - Full Stack URL Shortener
 
-A modern, full-stack URL shortening application with user authentication, analytics, and a beautiful responsive UI.
+A modern, full-stack URL shortening application with user authentication, real-time analytics, and a beautiful responsive UI.
 
-**Project Status**: ✅ Complete Authentication system, URL shortening, analytics dashboard, and monorepo structure
+---
 
-## 🚀 Quick Start
+## 📋 Setup Instructions
+
+### Prerequisites
+- **Node.js** (v18+)
+- **npm** or **yarn**
+- **PostgreSQL** (v12+)
+- Git
+
+### Local Development Setup
+
+#### 1. Clone the Repository
+```bash
+git clone https://github.com/DhivyadharshiniRajendran/QuickLink.git
+cd QuickLink
+```
+
+#### 2. Backend Setup
 
 ```bash
-# 1. Install dependencies for both frontend and backend
+cd backend
+
+# Copy environment template
+cp .env.example .env
+
+# Install dependencies
 npm install
 
-# 2. Configure environment (in backend folder)
-cd backend
-cp .env.example .env
-# Edit .env with your database credentials
-
-# 3. Initialize database
+# Run database migrations
 npm run migrate
 
-# 4. Start development servers (in separate terminals)
-# Terminal 1:
-cd frontend && npm run dev          # http://localhost:5173
-
-# Terminal 2:
-cd backend && npm run dev           # http://localhost:3001
+# Start development server
+npm run dev
+# Backend runs on http://localhost:3001
 ```
 
-Visit `http://localhost:5173` and create an account to test!
-
----
-
-## 📁 Project Structure (Monorepo)
-
-This is a **monorepo** with separated frontend and backend:
-
+**Backend .env Configuration:**
 ```
-quicklink/
-├── frontend/              # React + Vite frontend application
-│   ├── src/             # React components, pages, styles
-│   ├── .env             # Frontend configuration (VITE_API_URL)
-│   └── package.json     # Frontend dependencies
-│
-├── backend/             # Node.js/Express API server
-│   ├── src/             # Controllers, routes, middleware, database
-│   ├── .env             # Backend secrets (DATABASE_URL, JWT_SECRET)
-│   └── package.json     # Backend dependencies
-│
-├── MONOREPO.md          # Detailed monorepo guide
-└── README.md            # This file
+PORT=3001
+NODE_ENV=development
+# Database credentials (configured via .env.example)
+# JWT_SECRET (configured via .env.example)
 ```
 
-**For detailed setup instructions**, see [MONOREPO.md](./MONOREPO.md)
+#### 3. Frontend Setup
 
----
-
-## ✨ Features
-
-### 🔐 User Authentication
-- Secure signup/login with JWT tokens
-- Password hashing with bcryptjs (10 salt rounds)
-- Session persistence with localStorage
-- Protected routes requiring authentication
-- 7-day token expiration
-
-### 🔗 URL Shortening
-- Convert long URLs to memorable 6-character codes
-- Copy-to-clipboard functionality
-- View all shortened URLs in dashboard
-- Delete URLs individually
-
-### 📊 Analytics Dashboard
-- Total clicks across all shortened URLs
-- Per-URL click tracking
-- Recent visits timeline
-- Real-time statistics
-- Export analytics (planned)
-
-### 🎨 Beautiful UI
-- Responsive design (mobile-first)
-- Gradient backgrounds and modern styling
-- Loading spinners and success notifications
-- Form validation with inline errors
-- Dark mode ready (CSS variables)
-
----
-
-## 🛠 Tech Stack
-
-### Frontend
-- **React 19.2.4** - UI library with hooks
-- **React Router 7.13.1** - Client-side routing
-- **Vite 8.0.1** - Lightning-fast build tool
-- **CSS3** - Responsive styling (no external CSS framework)
-
-### Backend
-- **Node.js** - JavaScript runtime
-- **Express 4.18.2** - Web framework
-- **PostgreSQL** - Relational database
-- **JWT** - Token-based authentication
-- **bcryptjs** - Password hashing
-
----
-
-## 📚 Documentation
-
-### User Documentation
-- [Frontend README](./frontend/README.md) - React app features and usage
-- [Backend README](./backend/README.md) - API reference and architecture
-- [Monorepo Guide](./MONOREPO.md) - Development workflow and deployment
-- [Setup Guide](./SETUP.md) - Step-by-step installation
-
-### API Documentation
-See [Backend README - API Endpoints](./backend/README.md#api-endpoints) for complete API reference
-
----
-
-## 🔐 Security
-
-✅ **Implemented**:
-- Passwords hashed with bcryptjs (10 rounds salt)
-- JWT tokens expire after 7 days
-- Protected API endpoints with middleware
-- SQL injection prevention (parameterized queries)
-- CORS configured for frontend-only access
-- User data isolation (users only see their own URLs)
-- Environment variables for secrets (not in code)
-- `.env` files in `.gitignore` (never committed)
-
----
-
-## 🚀 Development
-
-### Starting Development Servers
-
-**Frontend Development** (with HMR):
 ```bash
 cd frontend
+
+# Copy environment template (if exists)
+cp .env.example .env.local
+
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
-# http://localhost:5173 - auto-reloads on save
+# Frontend runs on http://localhost:5173
 ```
 
-**Backend Development** (with nodemon):
-```bash
-cd backend
-npm run dev
-# http://localhost:3001 - auto-restarts on save
+**Frontend .env.local Configuration:**
 ```
-
-### Environment Configuration
-
-**Backend (.env)** - Sensitive values:
-```env
-DATABASE_URL=postgresql://...
-JWT_SECRET=your-secret-key
-PORT=3001
-```
-
-**Frontend (.env.local)** - API configuration:
-```env
 VITE_API_URL=http://localhost:3001/api
 ```
 
-See `.env.example` files for full templates.
+#### 4. Access Application
 
----
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:3001/api
+- **Database**: Local PostgreSQL instance
 
-## 📊 Database Schema
+### Build for Production
 
-### users
-```sql
-CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  email TEXT UNIQUE NOT NULL,
-  password_hash TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-### short_urls
-```sql
-CREATE TABLE short_urls (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  original_url TEXT NOT NULL,
-  short_code VARCHAR(6) UNIQUE NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-### visits
-```sql
-CREATE TABLE visits (
-  id SERIAL PRIMARY KEY,
-  short_url_id INTEGER NOT NULL REFERENCES short_urls(id) ON DELETE CASCADE,
-  visited_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-Automatically created on first backend startup with `npm run migrate`.
-
----
-
-## 🧪 Testing
-
-### Test User Authentication
-1. Go to http://localhost:5173
-2. Click "Create Account"
-3. Sign up with email/password
-4. Create a shortened URL
-5. Copy and share the link
-6. Analytics should show clicks when accessed
-
-### Test API Endpoints
-
-```bash
-# Sign up
-curl -X POST http://localhost:3001/api/auth/signup \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password123","confirmPassword":"password123"}'
-
-# Login
-curl -X POST http://localhost:3001/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password123"}'
-
-# Get current user (requires token)
-curl http://localhost:3001/api/auth/me \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
-```
-
----
-
-## 🚢 Deployment
-
-### Frontend Deployment
-
+**Frontend:**
 ```bash
 cd frontend
 npm run build
-# Creates optimized build in frontend/dist/
-
-# Deploy to Vercel, Netlify, GitHub Pages, or any static host
+# Creates optimized build in dist/
 ```
 
-### Backend Deployment
-
+**Backend:**
 ```bash
-# Deploy to Heroku, Railway, AWS, or any Node.js host
-# Set environment variables on host:
-export DATABASE_URL="production-postgresql-url"
-export JWT_SECRET="strong-production-secret"
-export CLIENT_URL="https://yourdomain.com"
-
+cd backend
 npm start
 ```
 
-**See [MONOREPO.md - Deployment](./MONOREPO.md#-deployment) for detailed instructions**
+---
+
+## 📋 Assumptions Made
+
+1. **Database**: PostgreSQL is installed and running locally (or via environment variable for production)
+
+2. **Node Environment**: Node.js v18+ with npm installed on developer machines and deployment platforms
+
+3. **Authentication**: JWT tokens are used for stateless authentication with 7-day expiration
+
+4. **URL Validation**: Short codes are exactly 6 alphanumeric characters, generated randomly and checked for uniqueness
+
+5. **CORS**: Backend allows requests from frontend domain, with credentials support for mobile redirect compatibility
+
+6. **URL Format**: User-provided URLs must start with `http://` or `https://` or the backend adds `https://` prefix automatically
+
+7. **Browser Storage**: Tokens are stored in localStorage (frontend) for session persistence across page refreshes
+
+8. **Monorepo Structure**: Frontend and backend are in separate folders but share git repository
+
+9. **Database Initialization**: Database schema is created automatically on first backend startup via migrations
+
+10. **Environment Secrets**: Sensitive data (DATABASE_URL, JWT_SECRET, API_URL) are never committed and must be set via .env files or environment variables
+
+11. **Analytics Tracking**: Every URL redirect automatically tracks visitor metadata (browser, OS, device type, IP address)
+
+12. **User Isolation**: Users can only view, edit, and delete their own shortened URLs (enforced via user_id verification)
 
 ---
 
-## 📦 Project File Structure
-
-Complete project organization:
+## 🏗️ Architecture Diagram
 
 ```
-quicklink/
-├── frontend/
-│   ├── src/
-│   │   ├── pages/           # Login, Signup, Dashboard, Analytics
-│   │   ├── components/      # Reusable UI components
-│   │   ├── context/         # AuthContext, UrlContext
-│   │   ├── styles/          # CSS files
-│   │   ├── utils/           # Helper functions
-│   │   ├── App.jsx          # Main router
-│   │   └── main.jsx         # Entry point
-│   ├── public/              # Static assets
-│   ├── .env.example         # Template
-│   ├── package.json
-│   ├── vite.config.js
-│   └── index.html
-│
-├── backend/
-│   ├── src/
-│   │   ├── server.js        # Express app
-│   │   ├── config/          # Database config
-│   │   ├── controllers/     # Route handlers
-│   │   ├── routes/          # API routes
-│   │   ├── middleware/      # Auth middleware
-│   │   ├── utils/           # Helpers
-│   │   └── migrations/      # Database setup
-│   ├── .env.example         # Template
-│   └── package.json
-│
-├── MONOREPO.md              # Monorepo guide
-├── SETUP.md                 # Installation guide
-└── README.md                # This file
+                           ┌─────────────────┐
+                           │  Web Browser    │
+                           │  (Client-side)  │
+                           └────────┬────────┘
+                                    │
+                    ┌───────────────┼───────────────┐
+                    │               │               │
+          ┌─────────▼─────────┐    │    ┌─────────▼──────────┐
+          │   React Frontend   │    │    │  Short URL Links   │
+          │   (Vercel)         │    │    │  (Public /:code)   │
+          │  ├─ Auth Pages     │    │    │                    │
+          │  ├─ Dashboard      │    │    │  Redirects via 301 │
+          │  ├─ Analytics      │    │    │                    │
+          │  └─ Context API    │    │    │  to Backend        │
+          └────────┬─────────┘    │    └────────┬─────────────┘
+                   │              │             │
+                   │ HTTPS        │             │ HTTPS
+                   │ API Calls    │             │
+                   │              │             │
+          ┌────────▼──────────────┴─────────────▼──────────────┐
+          │                                                      │
+          │          Express.js Backend Server                  │
+          │          (Render Hosting)                           │
+          │          ────────────────────                       │
+          │  ┌─────────────────────────────────────────┐       │
+          │  │  Routes & Controllers                   │       │
+          │  │  ├─ /api/auth/*          (Auth)        │       │
+          │  │  ├─ /api/urls/*          (URL Mgmt)    │       │
+          │  │  ├─ /api/urls/analytics  (Analytics)   │       │
+          │  │  └─ /:shortCode          (Redirect)    │       │
+          │  └─────────────────────────────────────────┘       │
+          │                    │                                 │
+          │  ┌─────────────────┴──────────────────────┐        │
+          │  │  Middleware                            │        │
+          │  │  ├─ JWT Authentication                 │        │
+          │  │  ├─ CORS Handler                       │        │
+          │  │  └─ Request Logging                    │        │
+          │  └───────────────────────────────────────┘        │
+          │                                                      │
+          └──────────────┬──────────────────────────────────────┘
+                         │
+                         │ SQL Queries
+                         │
+          ┌──────────────▼──────────────┐
+          │   PostgreSQL Database       │
+          │   (Railway Hosting)         │
+          │                             │
+          │  Tables:                    │
+          │  ├─ users                   │
+          │  ├─ short_urls              │
+          │  └─ visits (analytics)      │
+          │                             │
+          └─────────────────────────────┘
 ```
 
+### Data Flow
+
+1. **User Authentication**: User enters credentials → Frontend calls `/api/auth/login` → Backend validates & returns JWT token → Token stored in localStorage
+
+2. **Create Short URL**: User pastes long URL → Frontend validates format → Calls `/api/urls/create` → Backend generates 6-char code → Stores in DB → Returns short URL
+
+3. **Short URL Redirect**: User/visitor accesses `quicklink.render.com/abc123` → Backend's `/:shortCode` handler catches request → Looks up original URL in DB → 301 redirects to original → Analytics recorded
+
+4. **View Analytics**: User clicks analytics → Frontend calls `/api/urls/analytics/:id` → Backend queries visits table → Aggregates data (clicks, devices, browsers) → Returns to frontend → Charts display
+
 ---
 
-## 🤝 Contributing
+## 🎥 Video Demonstration
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/awesome-feature`
-3. Make changes in `frontend/` or `backend/` folder
-4. Test thoroughly
-5. Commit with clear messages
-6. Push and create a pull request
+**Project Demo Video:**
+- [YouTube Link](https://www.youtube.com/watch?v=YOUR_VIDEO_ID) - *Replace with actual YouTube link*
+- [Loom Recording](https://www.loom.com/share/YOUR_LOOM_ID) - *Replace with actual Loom link*
+
+**In the video:**
+- User signup and login flow
+- Creating and copying short URLs
+- Testing URL redirects on desktop and mobile
+- Viewing analytics dashboard with click tracking
+- Delete URL functionality
+- Real-time statistics updates
 
 ---
 
-## 🐛 Troubleshooting
+## 🛠️ Tech Stack
 
-**Frontend can't connect to backend?**
-- Check backend is running on `http://localhost:3001`
-- Verify `VITE_API_URL` in `frontend/.env`
-- Check browser console for CORS errors
-
-**Database connection failed?**
-- Ensure PostgreSQL is running
-- Check `DATABASE_URL` in `backend/.env`
-- Verify database exists and credentials are correct
-
-**Port already in use?**
-- Change `PORT` in `backend/.env` to `3002` (or another free port)
-- Change Vite port in `frontend/vite.config.js`
-
-**Token/auth issues?**
-- Clear localStorage: Open DevTools → Application → Local Storage → Delete `token`
-- Log in again with valid credentials
-- Check JWT_SECRET hasn't changed
+- **Frontend**: React 19, React Router 7, Vite, CSS3
+- **Backend**: Node.js, Express 4, PostgreSQL, JWT
+- **Hosting**: Vercel (Frontend), Render (Backend), Railway (Database)
+- **Authentication**: JWT with bcryptjs password hashing
 
 ---
 
@@ -339,13 +220,6 @@ MIT
 
 ---
 
-## 🎯 Next Steps
-
-1. **Deploy to production** - Use [MONOREPO.md - Deployment](./MONOREPO.md#-deployment)
-2. **Add features** - See [Contributing Section](#-contributing)
-3. **Customize styling** - Edit CSS in `frontend/src/styles/`
-4. **Extend API** - Add new endpoints in `backend/src/routes/`
-
-**Built with ❤️ using React, Node.js, Express, and PostgreSQL**
+**For more details about the codebase, see the documentation in individual `README.md` files in `/frontend` and `/backend` folders.**
 
 
