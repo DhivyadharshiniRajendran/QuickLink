@@ -230,8 +230,14 @@ export const deleteUrl = async (req, res) => {
 export const redirectToUrl = async (req, res) => {
   try {
     const { shortCode } = req.params;
+    const userAgent = req.get('user-agent') || '';
+    const isMobile = /mobile|android|iphone|ipad|tablet/i.test(userAgent);
+    
     console.log(`\n📱 Redirect request for short code: ${shortCode}`);
-    console.log(`   User Agent: ${req.get('user-agent')}`);
+    console.log(`   Device: ${isMobile ? '📱 MOBILE' : '💻 Desktop'}`);
+    console.log(`   User Agent: ${userAgent.substring(0, 120)}`);
+    console.log(`   Origin: ${req.get('origin') || 'none'}`);
+    console.log(`   Referer: ${req.get('referer') || 'direct'}`);
 
     const result = await pool.query(
       'SELECT id, original_url FROM short_urls WHERE short_code = $1',
@@ -246,16 +252,17 @@ export const redirectToUrl = async (req, res) => {
     let originalUrl = result.rows[0].original_url;
     const shortUrlId = result.rows[0].id;
 
+    console.log(`✓ Found short URL mapping - Original URL (before processing): ${originalUrl}`);
+
     // Ensure URL has protocol prefix for proper mobile redirect
     if (!originalUrl.startsWith('http://') && !originalUrl.startsWith('https://')) {
-      console.log(`⚠️  Adding https:// prefix to URL: ${originalUrl}`);
+      console.log(`⚠️  Original URL missing protocol prefix - Adding https://`);
       originalUrl = `https://${originalUrl}`;
     }
 
-    console.log(`✓ Original URL: ${originalUrl}`);
+    console.log(`✓ Final redirect URL (with protocol): ${originalUrl}`);
 
     // Extract analytics data
-    const userAgent = req.get('user-agent') || '';
     const { browser, os, deviceType } = parseBrowserInfo(userAgent);
     const ipAddress = getIpAddress(req);
 
@@ -275,12 +282,18 @@ export const redirectToUrl = async (req, res) => {
       [shortUrlId]
     );
 
-    console.log(`✓ Click tracked: ${shortCode} (ID: ${shortUrlId}) | Visit recorded with analytics and click count incremented`);
+    console.log(`✓ Click tracked: ${shortCode} (ID: ${shortUrlId}) | Visit recorded with analytics`);
 
     // Use 301 permanent redirect for better mobile compatibility
     // 301 = Moved Permanently (better for SEO and mobile browsers)
     // vs 302 = Found (temporary redirect)
-    console.log(`✓ Sending 301 permanent redirect to: ${originalUrl}\n`);
+    console.log(`✓ Sending 301 PERMANENT REDIRECT to mobile device ${isMobile ? '(mobile)' : '(desktop)'}`);
+    console.log(`   Location: ${originalUrl}\n`);
+    
+    // Set additional headers for mobile browser compatibility
+    res.set('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+    res.set('X-Content-Type-Options', 'nosniff');
+    
     res.redirect(301, originalUrl);
   } catch (error) {
     console.error('❌ Redirect error:', error);

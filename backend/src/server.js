@@ -36,16 +36,21 @@ console.log('=========================================\n');
 
 // CORS middleware - must be at the top, before any routes
 // Allow all origins for mobile redirect compatibility
+// Mobile browsers may have different CORS validation, so we allow all origins
 app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: true, // Allow all origins with credentials
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
+  credentials: true,
+  maxAge: 86400 // Cache preflight for 24 hours
 }));
 
 console.log('\n========== CORS CONFIGURATION ==========');
 console.log('Allowed origins: * (ALL ORIGINS)');
+console.log('Credentials: true');
 console.log('Reason: Mobile device compatibility for short URL redirects');
-console.log('Methods: GET, POST, PUT, DELETE, OPTIONS');
+console.log('Methods: GET, POST, PUT, DELETE, OPTIONS, HEAD');
+console.log('Caching: Preflight requests cached for 24 hours');
 console.log('=========================================\n');
 
 // Handle preflight OPTIONS requests for all routes
@@ -244,6 +249,8 @@ app.get('/test-urls/:userId', async (req, res) => {
 // DO NOT move this handler - routing order is critical!
 app.get('/:shortCode', (req, res, next) => {
   const { shortCode } = req.params;
+  const userAgent = req.get('user-agent') || 'unknown';
+  const isMobile = /mobile|android|iphone|ipad|tablet/i.test(userAgent);
   
   // STRICT VALIDATION: Only handle 6-character alphanumeric codes
   // This prevents accidentally catching other routes like /favicon.ico, /health, etc.
@@ -253,8 +260,11 @@ app.get('/:shortCode', (req, res, next) => {
     console.log(`\n✅ SHORT URL REDIRECT HANDLER MATCHED`);
     console.log(`   Pattern matched: /${shortCode} (6 alphanumeric characters)`);
     console.log(`   Request URL: ${req.originalUrl}`);
-    console.log(`   User Agent: ${req.get('user-agent')?.substring(0, 100) || 'unknown'}`);
+    console.log(`   Device Type: ${isMobile ? '📱 MOBILE' : '💻 Desktop'}`);
+    console.log(`   User Agent: ${userAgent.substring(0, 100)}`);
     console.log(`   Client IP: ${req.headers['x-forwarded-for'] || req.connection.remoteAddress}`);
+    console.log(`   Accept: ${req.get('accept')}`);
+    console.log(`   Accept-Language: ${req.get('accept-language')}`);
     console.log(`   Calling redirectToUrl controller...\n`);
     redirectToUrl(req, res, next);
   } else {
