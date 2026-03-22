@@ -310,6 +310,22 @@ This QuickLink URL shortener was planned and developed using AI-assisted develop
 
 ---
 
+## 🎥 Video Demonstration
+
+**Project Demo & Explanation Videos:**
+- [Google Drive Folder](https://drive.google.com/drive/folders/1ZXB54ZmKvFLpFMHrCzzylsU7vFlChXXz) - Complete explanatory videos and demo recordings
+
+**Demo Content:**
+- User signup and login flow with form validation
+- Creating and copying short URLs to clipboard
+- Testing URL redirects on desktop and mobile browsers
+- Viewing analytics dashboard with real-time click tracking
+- Viewing device, browser, and geographic breakdowns
+- Delete URL functionality with confirmation
+- Real-time statistics updates and charts
+
+---
+
 ## 📁 Project Structure
 
 ```
