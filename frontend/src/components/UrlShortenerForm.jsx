@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { useUrlContext } from '../context/UrlContext';
 import { isValidUrl } from '../utils/urlValidator';
-import { Toast } from './shared/Toast';
-import { Spinner } from './shared/Spinner';
 import './styles/UrlShortenerForm.css';
 
 export const UrlShortenerForm = () => {
@@ -10,25 +8,11 @@ export const UrlShortenerForm = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [createdUrl, setCreatedUrl] = useState(null);
-  const [successToast, setSuccessToast] = useState(false);
-  const [errorToast, setErrorToast] = useState('');
   const { createShortUrl } = useUrlContext();
-
-  const getUrlError = () => {
-    if (!url) return null;
-    if (!isValidUrl(url)) {
-      return 'Please enter a valid URL starting with http:// or https://';
-    }
-    return null;
-  };
-
-  const urlError = getUrlError();
-  const isValid = url && !urlError;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setErrorToast('');
 
     // Validation
     if (!url.trim()) {
@@ -49,13 +33,11 @@ export const UrlShortenerForm = () => {
         setUrl('');
         setError('');
         setCreatedUrl(result);
-        setSuccessToast(true);
+        // Clear success message after 5 seconds
         setTimeout(() => setCreatedUrl(null), 5000);
-      } else {
-        setErrorToast('Failed to create short URL. Please try again.');
       }
     } catch (err) {
-      setErrorToast('An error occurred. Please try again.');
+      setError('Failed to create short URL. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -63,20 +45,6 @@ export const UrlShortenerForm = () => {
 
   return (
     <>
-      {successToast && (
-        <Toast
-          message="Short URL created successfully!"
-          type="success"
-          onClose={() => setSuccessToast(false)}
-        />
-      )}
-      {errorToast && (
-        <Toast
-          message={errorToast}
-          type="error"
-          onClose={() => setErrorToast('')}
-        />
-      )}
       {createdUrl && (
         <div className="success-message-section">
           <div className="success-box">
@@ -90,6 +58,7 @@ export const UrlShortenerForm = () => {
                   type="button"
                   onClick={() => {
                     navigator.clipboard.writeText(createdUrl.shortUrl);
+                    // Show copied feedback
                   }}
                   className="copy-success-btn"
                 >
@@ -118,27 +87,18 @@ export const UrlShortenerForm = () => {
                 setUrl(e.target.value);
                 setError('');
               }}
-              className={`form-input ${error || urlError ? 'input-error' : ''}`}
+              className={`form-input ${error ? 'input-error' : ''}`}
               disabled={isLoading}
             />
             <button
               type="submit"
               className="shorten-btn"
-              disabled={isLoading || !isValid}
+              disabled={isLoading || !url.trim()}
             >
-              {isLoading ? (
-                <span className="button-spinner-wrapper">
-                  <Spinner size="small" />
-                  Creating...
-                </span>
-              ) : (
-                'Shorten URL'
-              )}
+              {isLoading ? 'Creating...' : 'Shorten URL'}
             </button>
           </div>
-          {(error || urlError) && (
-            <span className="field-error">{error || urlError}</span>
-          )}
+          {error && <span className="error-message">{error}</span>}
         </div>
       </form>
     </>
