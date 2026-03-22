@@ -152,9 +152,14 @@
   border: 1px solid #e0e0e0;
 }
 
-.delete-btn:hover {
+.delete-btn:hover:not(:disabled) {
   background-color: #ffebee;
   border-color: #d32f2f;
+}
+
+.delete-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {

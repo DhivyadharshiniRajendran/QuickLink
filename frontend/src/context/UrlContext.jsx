@@ -10,6 +10,7 @@ export const UrlProvider = ({ children }) => {
   const [urls, setUrls] = useState([]);
   const [notification, setNotification] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const { token } = useAuth();
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
@@ -29,6 +30,7 @@ export const UrlProvider = ({ children }) => {
 
       try {
         setLoading(true);
+        setError(null);
         const response = await fetch(`${API_URL}/urls/my-urls`, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -38,14 +40,17 @@ export const UrlProvider = ({ children }) => {
         if (response.ok) {
           const data = await response.json();
           setUrls(data.urls);
+          setError(null);
           if (showMessage) {
             showNotification('URLs loaded successfully!');
           }
         } else {
+          setError('Failed to load URLs');
           showNotification('Failed to load URLs', 'error');
         }
       } catch (error) {
         console.error('Fetch URLs error:', error);
+        setError('Error loading URLs. Please try again.');
         showNotification('Error loading URLs', 'error');
       } finally {
         setLoading(false);
@@ -186,6 +191,7 @@ export const UrlProvider = ({ children }) => {
     urls,
     notification,
     loading,
+    error,
     showNotification,
     createShortUrl,
     deleteUrl,

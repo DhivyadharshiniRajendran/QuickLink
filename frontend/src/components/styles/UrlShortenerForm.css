@@ -184,6 +184,21 @@
   display: block;
 }
 
+.field-error {
+  color: #ff6b6b;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  display: block;
+  font-weight: 500;
+}
+
+.button-spinner-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
 @media (max-width: 768px) {
   .url-shortener-form {
     padding: 1.5rem;
