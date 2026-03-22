@@ -1,0 +1,30 @@
+{
+  "name": "quicklink",
+  "version": "1.0.0",
+  "description": "Full-stack URL shortener with React frontend and Node.js/Express backend",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "build": "npm run build --workspace=frontend",
+    "start": "npm run start --workspace=backend",
+    "start:backend": "npm run start --workspace=backend",
+    "migrate": "npm run migrate --workspace=backend",
+    "lint": "npm run lint --workspace=frontend"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "keywords": [
+    "url-shortener",
+    "react",
+    "express",
+    "postgresql"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "recharts": "^3.8.0"
+  }
+}
