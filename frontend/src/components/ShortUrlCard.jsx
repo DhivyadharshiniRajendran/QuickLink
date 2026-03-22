@@ -9,9 +9,7 @@ export const ShortUrlCard = ({ url }) => {
   const { deleteUrl, showNotification } = useUrlContext();
 
   const handleCopyClick = () => {
-    navigator.clipboard.writeText(
-      window.location.origin + '/' + url.shortCode
-    );
+    navigator.clipboard.writeText(url.shortUrl);
     setCopied(true);
     showNotification('Short URL copied to clipboard!', 'success');
     setTimeout(() => setCopied(false), 2000);
