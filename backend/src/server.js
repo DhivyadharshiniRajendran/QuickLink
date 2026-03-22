@@ -5,6 +5,7 @@ import authRoutes from './routes/authRoutes.js';
 import urlRoutes from './routes/urlRoutes.js';
 import initializeDatabase from './migrations/init.js';
 import { redirectToUrl } from './controllers/urlController.js';
+import pool from './config/database.js';
 
 dotenv.config();
 

@@ -13,8 +13,8 @@ const router = express.Router();
 // Protected routes - must be BEFORE the catch-all /:id route
 router.post('/create', authenticateToken, createShortUrl);
 router.get('/my-urls', authenticateToken, getUserUrls);
-router.get('/details/:id', authenticateToken, getUrlDetails);
 router.get('/analytics/:id', authenticateToken, getAnalytics);
+router.get('/details/:id', authenticateToken, getUrlDetails);
 router.delete('/:id', authenticateToken, deleteUrl);
 
 // IMPORTANT: DO NOT add a catch-all :shortCode handler here!
